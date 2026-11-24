@@ -21,7 +21,7 @@ jobs:
           packages: platforms;android-37.0 ndk;30.0.16248370
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android
+          targets: aarch64-linux-android,armv7-linux-androideabi
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: core
