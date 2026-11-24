@@ -1,0 +1,53 @@
+name: Yuyue Android arm64 verify
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-arm64:
+    name: Android arm64 编译
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-37.0 ndk;30.0.16248370
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+          key: android
+      - run: cargo install cargo-ndk --locked
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: reader/package.json
+          version: 12
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: reader/pnpm-lock.yaml
+      - name: 书页
+        run: pnpm install --frozen-lockfile && pnpm build
+        working-directory: reader
+      - name: 核心
+        run: android/build-core.sh
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/30.0.16248370
+      - uses: gradle/actions/setup-gradle@v5
+      - run: ./gradlew assembleDebug --no-daemon
+        working-directory: android
+      - uses: actions/upload-artifact@v5
+        with:
+          name: yuyue-arm64-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
